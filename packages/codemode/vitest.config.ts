@@ -4,6 +4,7 @@ export default defineWorkersConfig({
   test: {
     name: "workers",
     include: ["src/tests/**/*.test.ts"],
+    exclude: ["src/tests/**/*.browser.test.ts"],
     poolOptions: {
       workers: {
         isolatedStorage: false,

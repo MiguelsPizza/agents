@@ -53,11 +53,17 @@
       "types": "./dist/mcp.d.ts",
       "import": "./dist/mcp.js",
       "require": "./dist/mcp.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.js"
     }
   },
   "scripts": {
     "build": "tsx ./scripts/build.ts",
     "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:e2e": "npx playwright test --config e2e/playwright.config.ts",
     "test:watch": "vitest"
   },
