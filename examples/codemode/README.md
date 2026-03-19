@@ -18,6 +18,7 @@ A project management chat app where the LLM writes and executes code to orchestr
 - Collapsible tool cards showing generated code, results, and console output
 - Settings panel to switch between Dynamic Worker and Node Server executors
 - Kumo design system components with dark/light mode
+- Browser/WebMCP variant documented in [`../../docs/codemode.md`](../../docs/codemode.md#browser-executor-with-webmcp-client-tools)
 
 **Tools (`src/tools.ts`):**
 
@@ -47,3 +48,18 @@ npm run start:node-executor  # starts Node VM server on port 3001
 - "What is 17 + 25?" -- simple calculation via `codemode.addNumbers()`
 - "List all projects and their tasks" -- LLM composes results from multiple tools
 - Open Settings to switch between Dynamic Worker and Node Server executors
+
+## Browser + WebMCP variant
+
+The example app in this folder is server-executor focused to keep the runtime
+surface small for review. If you want codemode to run entirely in the browser,
+the docs now include a companion pattern that:
+
+- reads tools from `navigator.modelContextTesting.listTools()`
+- refreshes on the `toolchange` event
+- wraps those tools with `createBrowserCodeTool(...)`
+- registers the resulting `codemode` tool through
+  `useAgentChat({ tools })`
+
+See [`docs/codemode.md`](../../docs/codemode.md#browser-executor-with-webmcp-client-tools)
+for the full server + client example.
