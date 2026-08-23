@@ -258,6 +258,48 @@ describe("Think — message reconciliation on incoming submits", () => {
     ws.close(1000);
   });
 
+  it("uses the complete server assistant when the next turn carries a stale replay", async () => {
+    const room = crypto.randomUUID();
+    const agent = await freshAgent(room);
+    const ws = await connectWS(room);
+    await agent.setTextOnlyMode(true);
+
+    const userA = makeUserMessage("user-a", "finish the long task");
+    const toolParts = Array.from({ length: 50 }, (_, index) => ({
+      type: "tool-test",
+      toolCallId: `call-${index}`,
+      state: "output-available",
+      input: { index },
+      output: { index }
+    })) as unknown as UIMessage["parts"];
+    const complete: UIMessage = {
+      id: "complete-assistant",
+      role: "assistant",
+      parts: [...toolParts, { type: "text", text: "Final answer" }]
+    };
+    await agent.persistToolCallMessage([userA, complete]);
+
+    const stale: UIMessage = {
+      ...complete,
+      parts: [...toolParts.slice(0, 39), ...toolParts.slice(0, 39)]
+    };
+    const done = waitForDone(ws);
+    sendChatRequest(ws, [userA, stale, makeUserMessage("user-b", "continue")]);
+    await done;
+
+    const turnMessages = await agent.getLastTurnMessagesJson();
+    for (let index = 0; index < 50; index++) {
+      expect(turnMessages).toContain(`call-${index}`);
+    }
+    expect(turnMessages).toContain("Final answer");
+
+    const stored = (await agent.getMessages()) as UIMessage[];
+    expect(stored.find(({ id }) => id === complete.id)?.parts).toEqual(
+      complete.parts
+    );
+    ws.close(1000);
+  });
+
   it("repairs a persisted orphan tool call before the next Think turn", async () => {
     const room = crypto.randomUUID();
     const agent = await freshAgent(room);

@@ -896,6 +896,31 @@ describe("Think — Session integration", () => {
     expect(messages[0].id).toBe("history-helper-user");
   });
 
+  it("does not replace a complete server assistant with a stale client replay", async () => {
+    const agent = await freshAgent("session-stale-assistant-replay");
+    const toolParts = Array.from({ length: 50 }, (_, index) => ({
+      type: "tool-test",
+      toolCallId: `call-${index}`,
+      state: "output-available",
+      input: { index },
+      output: { index }
+    })) as unknown as UIMessage["parts"];
+    const complete: UIMessage = {
+      id: "complete-assistant",
+      role: "assistant",
+      parts: [...toolParts, { type: "text", text: "Final answer" }]
+    };
+    await agent.appendHistoryMessageForTest(complete);
+
+    await agent.persistIncomingMessageForTest({
+      ...complete,
+      parts: [...toolParts.slice(0, 39), ...toolParts.slice(0, 39)]
+    });
+
+    const [stored] = (await agent.getStoredMessages()) as UIMessage[];
+    expect(stored.parts).toEqual(complete.parts);
+  });
+
   it("keeps cache aligned for direct session appendMessage calls", async () => {
     const agent = await freshAgent("session-direct-append");
     await agent.appendSessionMessageForTest({

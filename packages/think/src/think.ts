@@ -12956,9 +12956,9 @@ export class Think<
 
   /**
    * Persist an incoming message after reconciliation. For assistant
-   * messages, also resolve their ID against any server-side row that
-   * already owns the same `toolCallId` so we update the existing row
-   * instead of inserting an orphan duplicate.
+   * messages, resolve their ID against any server-side row that already owns
+   * the same `toolCallId`, and keep existing server-authored content when the
+   * client replays a stale snapshot.
    */
   private async _persistIncomingMessage(
     msg: UIMessage,
@@ -12969,7 +12969,12 @@ export class Think<
       sanitized.role === "assistant"
         ? resolveToolMergeId(sanitized, serverMessages)
         : sanitized;
-    await this._upsertMessageInHistory(resolved);
+    const stored = serverMessages.find(({ id }) => id === resolved.id);
+    await this._upsertMessageInHistory(
+      stored?.role === "assistant" && resolved.role === "assistant"
+        ? { ...resolved, parts: stored.parts }
+        : resolved
+    );
   }
 
   /**

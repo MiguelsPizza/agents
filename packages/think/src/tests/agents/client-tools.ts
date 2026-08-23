@@ -12,7 +12,8 @@ import { Think } from "../../think";
 import type {
   ChatResponseResult,
   MessageConcurrency,
-  StreamCallback
+  StreamCallback,
+  TurnContext
 } from "../../think";
 import { StreamAccumulator, type ClientToolSchema } from "agents/chat";
 
@@ -683,13 +684,19 @@ export class ThinkClientToolsAgent extends Think {
   private _slowChunkCount = 4;
   private _responseLog: ChatResponseResult[] = [];
   private _lastTurnToolNames: string[] = [];
+  private _lastTurnMessagesJson: string | null = null;
 
-  override beforeTurn(ctx: { tools: ToolSet }): void {
+  override beforeTurn(ctx: TurnContext): void {
     this._lastTurnToolNames = Object.keys(ctx.tools);
+    this._lastTurnMessagesJson = JSON.stringify(ctx.messages);
   }
 
   async getLastTurnToolNames(): Promise<string[]> {
     return this._lastTurnToolNames;
+  }
+
+  async getLastTurnMessagesJson(): Promise<string | null> {
+    return this._lastTurnMessagesJson;
   }
 
   override onChatResponse(result: ChatResponseResult): void {
